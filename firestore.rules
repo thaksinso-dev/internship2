@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['id', 'studentCode', 'name', 'level', 'department']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.studentCode is string && data.studentCode.size() <= 30 &&
+             data.name is string && data.name.size() <= 150 &&
+             data.level is string && data.level.size() <= 50 &&
+             data.department is string && data.department.size() <= 150;
+    }
+
+    function isValidCompany(data) {
+      return data.keys().hasAll(['id', 'name', 'sector', 'phone']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.name is string && data.name.size() <= 200 &&
+             data.sector is string && data.sector.size() <= 50 &&
+             data.phone is string && data.phone.size() <= 50;
+    }
+
+    function isValidSubmission(data) {
+      return data.keys().hasAll(['id', 'studentId', 'weekNumber', 'status', 'taskTitle']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.studentId is string && data.studentId.size() <= 128 &&
+             data.weekNumber is number &&
+             data.status is string && data.status.size() <= 30 &&
+             data.taskTitle is string && data.taskTitle.size() <= 300;
+    }
+
+    function isValidAnnouncement(data) {
+      return data.keys().hasAll(['id', 'title', 'content', 'date', 'type']) &&
+             data.id is string && data.id.size() <= 128 &&
+             data.title is string && data.title.size() <= 200 &&
+             data.content is string && data.content.size() <= 1000 &&
+             data.date is string && data.date.size() <= 50 &&
+             data.type is string && data.type.size() <= 50;
+    }
+
+    match /students/{studentId} {
+      allow read: if true;
+      allow create, update: if isValidId(studentId) && isValidStudent(request.resource.data);
+      allow delete: if isValidId(studentId);
+    }
+
+    match /companies/{companyId} {
+      allow read: if true;
+      allow create, update: if isValidId(companyId) && isValidCompany(request.resource.data);
+      allow delete: if isValidId(companyId);
+    }
+
+    match /submissions/{submissionId} {
+      allow read: if true;
+      allow create, update: if isValidId(submissionId) && isValidSubmission(request.resource.data);
+      allow delete: if isValidId(submissionId);
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow create, update: if isValidId(announcementId) && isValidAnnouncement(request.resource.data);
+      allow delete: if isValidId(announcementId);
+    }
+  }
+}
